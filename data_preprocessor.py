@@ -126,9 +126,9 @@ if __name__ == "__main__":
     processor.save_main_splits()
 
     processor.generate_eval_set(
-        source_split='val',         
+        source_split='train',         
         filter_origin_split='train',
-        take_num=300,
-        output_json_name='first_test.json',
-        output_txt_name='output.txt'
+        take_num=1000,
+        output_json_name='subset.json',
+        output_txt_name='output_subset.txt'
     )

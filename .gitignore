@@ -8,3 +8,6 @@ __pycache__/
 *.txt
 *.json
 *.ckpt
+*.pth
+*.gz
+/mini_dataset
