@@ -3,7 +3,7 @@ import json
 import math
 import torch
 import numpy as np
-from torch.utils.data import IterableDataset, get_worker_info
+from torch.utils.data import IterableDataset, get_worker_info, Dataset
 from decord import VideoReader, cpu
 from dataclasses import dataclass
 from typing import List, Optional, Any
@@ -145,3 +145,50 @@ class DeepfakeDataset(IterableDataset):
     def __len__(self):
         # === 關鍵修改：回傳精確的總幀數 ===
         return self.total_frames
+class DeepfakeVideoDataset(Dataset):
+    """
+    專為 Inference 設計的 Dataset。
+    一次回傳「整支影片」的所有 Frames，而不是打散的 Frame。
+    """
+    def __init__(
+        self, 
+        data_root: str, 
+        json_file: str = None, 
+        metadata: List[VideoMetadata] = None, # 支援直接傳入物件 (給 infer.py 用)
+        image_size: int = 96,
+        take_num: Optional[int] = None
+    ):
+        self.data_root = data_root
+        self.image_size = image_size
+
+        # 支援兩種初始化方式：讀 JSON 檔 或 直接傳 Metadata 列表
+        if metadata:
+            self.metadata = metadata
+        elif json_file:
+            print(f"Loading metadata from: {json_file}")
+            with open(json_file, 'r') as f:
+                data = json.load(f)
+            self.metadata = [VideoMetadata(**item) for item in data]
+        else:
+            raise ValueError("Must provide either json_file or metadata.")
+
+        if take_num is not None:
+            self.metadata = self.metadata[:take_num]
+            
+        print(f"Loaded {len(self.metadata)} video entries for inference.")
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def __getitem__(self, index):
+        meta = self.metadata[index]
+        # 拼湊路徑
+        video_path = os.path.join(self.data_root, meta.split, meta.file)
+        
+        # 使用你原本寫好的 Decord 讀取函式
+        # 注意：這裡回傳的是 (T, C, H, W) 的完整影片 Tensor
+        video = read_video_decord(video_path, resize_shape=(self.image_size, self.image_size))
+        
+        # Inference 時我們通常不需要 Label，或者回傳預設值
+        # 這裡為了相容性，我們只回傳 video
+        return video, meta.file

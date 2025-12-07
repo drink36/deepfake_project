@@ -48,6 +48,7 @@ if __name__ == "__main__":
         data_root=args.data_root,
         json_file=args.train_metadata,
         image_size=96,
+        take_num=args.num_train
         
     )
     # For validation, you can still do the normal dataset
@@ -55,6 +56,7 @@ if __name__ == "__main__":
         data_root=args.data_root,
         json_file=args.val_metadata,
         image_size=96,
+        take_num=args.num_val
     )
 
     # Parse precision properly
