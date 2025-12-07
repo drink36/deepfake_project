@@ -17,3 +17,7 @@ time ffmpeg -i /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train/vox_cele
 
 
 python /users/PAS2119/drink36/AV-Deepfake1M/examples/xception/new_train.py   --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus   --model xception   --batch_size 1024   --precision bf16-mixed   --gpus 1   --num_train 50000   --num_val 2000   --max_epochs 50
+
+python models/train.py   --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus   --model xception   --batch_size 1024   --precision bf16-mixed   --gpus 1   --num_train 50000   --num_val 2000   --max_epochs 50 --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json
+
+python models/train.py   --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus   --model xception   --batch_size 1024   --precision bf16-mixed   --num_train 50000   --num_val 2000   --max_epochs 50 --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json

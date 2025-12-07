@@ -1,5 +1,8 @@
 import argparse
 import torch
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from torch.utils.data import DataLoader
 from lightning.pytorch import Trainer
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -43,13 +46,14 @@ if __name__ == "__main__":
 
     train_dataset = DeepfakeDataset(
         data_root=args.data_root,
-        metadata_file=args.train_metadata,
+        json_file=args.train_metadata,
         image_size=96,
+        
     )
     # For validation, you can still do the normal dataset
     val_dataset = DeepfakeDataset(
         data_root=args.data_root,
-        metadata_file=args.val_metadata,
+        json_file=args.val_metadata,
         image_size=96,
     )
 
