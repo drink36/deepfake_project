@@ -67,19 +67,21 @@ def copy_files(json_file, source_root, dest_root):
     print(f"   Missing: {missing_count}")
     print(f"📂 Output folder: {dest_root}")
     print("="*30)
-    print("現在你可以把這個資料夾壓縮並下載了！")
 
 if __name__ == "__main__":
     # ================= 設定區 =================
     # 1. 你的 JSON 檔 (裡面只有那 300 筆)
-    MY_JSON_FILE = 'subset.json' 
-    
+    MY_JSON_FILE = 'train_subset.json' 
+    MY_JSON_FILE2 = 'test_subset.json'
+    MY_JSON_FILE3 = 'val_subset.json'
     # 2. 原始 1.4TB 數據的根目錄 (Server 上的位置)
     # 根據之前的對話，應該是這個：
     SOURCE_DATA_ROOT = '/fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus'
     
     # 3. 你想要複製到哪裡 (當前目錄下的一個新資料夾)
-    DEST_DIR_NAME = 'mini_dataset'
+    DEST_DIR_NAME = 'test_dataset'
     # =========================================
 
     copy_files(MY_JSON_FILE, SOURCE_DATA_ROOT, DEST_DIR_NAME)
+    copy_files(MY_JSON_FILE2, SOURCE_DATA_ROOT, DEST_DIR_NAME)
+    copy_files(MY_JSON_FILE3, SOURCE_DATA_ROOT, DEST_DIR_NAME)

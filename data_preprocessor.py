@@ -128,7 +128,21 @@ if __name__ == "__main__":
     processor.generate_eval_set(
         source_split='train',         
         filter_origin_split='train',
+        take_num=5000,
+        output_json_name='train_subset.json',
+        output_txt_name='train_subset.txt'
+    )
+    processor.generate_eval_set(
+        source_split='val',         
+        filter_origin_split='train',
         take_num=1000,
-        output_json_name='subset.json',
-        output_txt_name='output_subset.txt'
+        output_json_name='val_subset.json',
+        output_txt_name='val_subset.txt'
+    )
+    processor.generate_eval_set(
+        source_split='test',         
+        filter_origin_split='train',
+        take_num=1000,
+        output_json_name='test_subset.json',
+        output_txt_name='test_subset.txt'
     )
