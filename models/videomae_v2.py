@@ -33,11 +33,19 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
             for param in self.classifier.parameters():
                 param.requires_grad = True
         else:
-            # 建議至少凍結 Patch Embedding (這在小數據集上很有效)
-            print("🔧 Full Fine-tuning (with frozen patch_embed)")
+            print("🔧 Strategy: Full Fine-tuning (Training ALL layers)")
+            
+            # [關鍵修正] 1. 先強制把所有參數設為可訓練 (True)
+            # 這能確保不管模型載入時狀態如何，我們都把它打開
+            for param in self.backbone.parameters():
+                param.requires_grad = True
+            
+            # 2. 接著才凍結 Patch Embedding (這是為了穩定性，可選)
             for name, param in self.backbone.named_parameters():
                  if 'patch_embed' in name:
                      param.requires_grad = False
+                     
+            print("✅ Backbone is UNFREZEN. (Except patch_embed)")
 
     def forward(self, x):
         # 1. 維度修正 (Input Shape Fix)

@@ -191,8 +191,6 @@ class DeepfakeVideoDataset(Dataset):
         # 注意：這裡回傳的是 (T, C, H, W) 的完整影片 Tensor
         video = read_video_decord(video_path, resize_shape=(self.image_size, self.image_size))
         
-        # Inference 時我們通常不需要 Label，或者回傳預設值
-        # 這裡為了相容性，我們只回傳 video
         return video, meta.file
 class DeepfakeClipDataset(Dataset):
     def __init__(self, 
