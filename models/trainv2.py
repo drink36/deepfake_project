@@ -76,6 +76,7 @@ if __name__ == "__main__":
             metadata=train_meta_obj,
             clip_len=16,      # VideoMAE 標準長度
             image_size=image_size,
+            take_num=args.num_train,
             mode='train'      # 啟用 Smart Sampling
         )
         
@@ -84,6 +85,7 @@ if __name__ == "__main__":
             metadata=val_meta_obj,
             clip_len=16,
             image_size=image_size,
+            take_num=args.num_val,
             mode='test'       # Validation 用中心裁切
         )
         
