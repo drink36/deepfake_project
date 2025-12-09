@@ -7,7 +7,7 @@ from torch.utils.data import IterableDataset, get_worker_info, Dataset
 from decord import VideoReader, cpu
 from dataclasses import dataclass
 from typing import List, Optional, Any
-
+import random
 @dataclass
 class VideoMetadata:
     """
@@ -18,18 +18,20 @@ class VideoMetadata:
     fake_periods: List[List[float]]
     duration: float = 0.0
     video_frames: int = 0
+    fps: float = 25.0
     extra_data: dict = None 
-
     def __init__(self, file: str, split: str = "train", fake_periods: List[List[float]] = None, **kwargs):
         self.file = file
         self.split = split
         self.fake_periods = fake_periods if fake_periods is not None else []
         self.extra_data = kwargs
         
-        # 這裡很關鍵：嘗試從 JSON 讀取 video_frames
-        # 如果 JSON 裡沒寫，預設為 0 (這樣總長度會算錯，但不會報錯)
+        # 從 JSON 讀取這些欄位，如果沒有就用預設值
         self.video_frames = kwargs.get('video_frames', 0)
         self.duration = kwargs.get('duration', 0.0)
+        
+        # <--- 關鍵修正：嘗試從 kwargs 抓 fps，抓不到就預設 25
+        self.fps = kwargs.get('fps', 25.0)
 
 def read_video_decord(path: str, resize_shape: tuple = None):
     try:
@@ -192,3 +194,99 @@ class DeepfakeVideoDataset(Dataset):
         # Inference 時我們通常不需要 Label，或者回傳預設值
         # 這裡為了相容性，我們只回傳 video
         return video, meta.file
+class DeepfakeClipDataset(Dataset):
+    def __init__(self, 
+                 data_root: str, 
+                 metadata: list,  # 你的 VideoMetadata list
+                 clip_len: int = 16, # 3D CNN 通常用 8, 16, 32
+                 frame_interval: int = 1, # 跳幀採樣 (1=連續, 2=每隔1張採1張)
+                 image_size: int = 224, # VideoMAE/TimeSformer 通常要 224
+                 mode: str = 'train'):
+        
+        self.data_root = data_root
+        self.metadata = metadata
+        self.clip_len = clip_len
+        self.frame_interval = frame_interval
+        self.image_size = image_size
+        self.mode = mode
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def _get_clip_indices(self, total_frames, fake_periods, fps):
+        """
+        核心邏輯：決定要抓哪 16 幀
+        """
+        # 計算實際需要的總跨度 (考慮跳幀)
+        # 例如 clip_len=16, interval=2 => 需要覆蓋 32 幀的長度
+        window_size = (self.clip_len - 1) * self.frame_interval + 1
+        
+        if total_frames < window_size:
+            # 影片太短，回傳全部並 Padding (或直接頭部重複)
+            return list(range(total_frames)) + [total_frames-1] * (self.clip_len - total_frames)
+
+        # === 訓練模式：Smart Sampling ===
+        if self.mode == 'train':
+            # 如果有 fake_periods，優先從裡面抓
+            if len(fake_periods) > 0:
+                # 1. 把秒數轉為 Frame Index 區間
+                fake_ranges = []
+                for start_sec, end_sec in fake_periods:
+                    s_idx = int(start_sec * fps)
+                    e_idx = int(end_sec * fps)
+                    # 確保區間合理
+                    if e_idx - s_idx >= window_size:
+                        fake_ranges.append((s_idx, e_idx))
+                
+                # 2. 如果有夠長的 Fake 片段，從裡面隨機選一段
+                if fake_ranges:
+                    s, e = random.choice(fake_ranges)
+                    # 在這個 Fake 區間內，隨機找一個起點
+                    max_start = e - window_size
+                    start_idx = random.randint(s, max(s, max_start))
+                    
+                    # 產生 Indices
+                    return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
+            
+            # 如果是真影片 (或 fake 片段太短)，就整支影片隨機抓
+            max_start = total_frames - window_size
+            start_idx = random.randint(0, max_start)
+            return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
+
+        # === 測試模式：中心採樣 (Center Crop in Time) ===
+        else:
+            # 取正中間的一段 (或是你可以改成取多段做 Ensemble)
+            start_idx = max(0, (total_frames - window_size) // 2)
+            return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
+
+    def __getitem__(self, index):
+        meta = self.metadata[index]
+        path = os.path.join(self.data_root, meta.split, meta.file)
+        
+        try:
+            # 使用 Decord 讀取
+            vr = VideoReader(path, ctx=cpu(0), width=self.image_size, height=self.image_size)
+            total_frames = len(vr)
+            
+            # 1. 決定要讀哪些 Frames
+            indices = self._get_clip_indices(total_frames, meta.fake_periods, meta.fps)
+            
+            # 2. 讀取並轉為 Torch Tensor
+            # Decord 回傳: (T, H, W, C)
+            buffer = vr.get_batch(indices).asnumpy()
+            
+            # 3. 轉為 PyTorch 格式
+            # Video Model 通常需要: (C, T, H, W)
+            video = torch.from_numpy(buffer).permute(3, 0, 1, 2).float() / 255.0
+            
+            # 4. Label (只要該影片有 fake_periods 就算 1)
+            # 在這種訓練模式下，因為我們保證了 video clip 來自 fake 區間，
+            # 所以這個 label 對應這個 clip 是準確的！
+            label = 1.0 if len(meta.fake_periods) > 0 else 0.0
+            
+            return video, label, meta.file
+            
+        except Exception as e:
+            print(f"Error reading {path}: {e}")
+            # 回傳空值，DataLoader 的 collate_fn 需處理
+            return torch.zeros(3, self.clip_len, self.image_size, self.image_size), 0.0, meta.file
