@@ -58,7 +58,10 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
 
         # 6. loss
         self.criterion = nn.BCEWithLogitsLoss()
-
+    def ensure_train_mode(self):
+        """Make sure every layer in backbone enters train() mode."""
+        for m in self.backbone.modules():
+            m.train()
     def _normalize(self, x: torch.Tensor) -> torch.Tensor:
         return (x - self.img_mean) / self.img_std
 
@@ -103,6 +106,9 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
 
     # ---------- Lightning hooks ----------
     def training_step(self, batch, batch_idx):
+        self.ensure_train_mode()
+        if batch_idx == 0:
+            print("Backbone TRAIN modules:", sum(1 for m in self.backbone.modules() if m.training), "Backbone EVAL modules:", sum(1 for m in self.backbone.modules() if not m.training))
         x, y = batch[:2]                # x: (B, 3, T, H, W), y: (B,)
         logits = self(x).squeeze(-1)    # (B,)
         loss = self.criterion(logits, y.float())
