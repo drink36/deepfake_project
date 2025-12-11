@@ -216,47 +216,46 @@ class DeepfakeClipDataset(Dataset):
         return len(self.metadata)
 
     def _get_clip_indices(self, total_frames, fake_periods, fps):
-        """
-        核心邏輯：決定要抓哪 16 幀
-        """
-        # 計算實際需要的總跨度 (考慮跳幀)
-        # 例如 clip_len=16, interval=2 => 需要覆蓋 32 幀的長度
         window_size = (self.clip_len - 1) * self.frame_interval + 1
-        
-        if total_frames < window_size:
-            # 影片太短，回傳全部並 Padding (或直接頭部重複)
-            return list(range(total_frames)) + [total_frames-1] * (self.clip_len - total_frames)
 
-        if self.mode == 'train':
-            # 如果有 fake_periods，優先從裡面抓
-            if len(fake_periods) > 0:
-                # 1. 把秒數轉為 Frame Index 區間
-                fake_ranges = []
-                for start_sec, end_sec in fake_periods:
-                    s_idx = int(start_sec * fps)
-                    e_idx = int(end_sec * fps)
-                    # 確保區間合理
-                    if e_idx - s_idx >= window_size:
-                        fake_ranges.append((s_idx, e_idx))
-                
-                # 2. 如果有夠長的 Fake 片段，從裡面隨機選一段
-                if fake_ranges:
-                    s, e = random.choice(fake_ranges)
-                    # 在這個 Fake 區間內，隨機找一個起點
-                    max_start = e - window_size
-                    start_idx = random.randint(s, max(s, max_start))
-                    
-                    # 產生 Indices
-                    return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
-            
-            max_start = total_frames - window_size
-            start_idx = random.randint(0, max_start)
+        # ---------------------------
+        # CASE 1: Fake video
+        # ---------------------------
+        if len(fake_periods) > 0:
+            start_sec, end_sec = random.choice(fake_periods)
+
+            s_idx = int(start_sec * fps)
+            e_idx = int(end_sec * fps)
+
+            # Fake center
+            center = (s_idx + e_idx) // 2
+            center = max(0, min(center, total_frames - 1))
+
+            half = window_size // 2
+
+            if self.mode == "train":
+                # Random jitter during training
+                jitter = random.randint(-half // 2, half // 2)
+            else:
+                # No randomness in val/test
+                jitter = 0
+
+            start_idx = center - half + jitter
+
+            # Clamp
+            start_idx = max(0, min(start_idx, total_frames - window_size))
+
             return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
 
-        else:
-            # 取正中間的一段 (或是你可以改成取多段做 Ensemble)
-            start_idx = max(0, (total_frames - window_size) // 2)
-            return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
+        # ---------------------------
+        # CASE 2: Real video → center sampling
+        # ---------------------------
+        center = total_frames // 2
+        half = window_size // 2
+        start_idx = max(0, center - half)
+        start_idx = min(start_idx, total_frames - window_size)
+
+        return [start_idx + i * self.frame_interval for i in range(self.clip_len)]
 
     def __getitem__(self, index):
         meta = self.metadata[index]

@@ -11,6 +11,7 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
         num_classes: int = 1,
         freeze_backbone: bool = False,
         distributed: bool = False,
+        num_frames: int = 16,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["backbone"])
@@ -29,7 +30,8 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
         if hasattr(config, "model_config"):
             mc = config.model_config
             hidden_dim = mc.get("embed_dim", None)
-
+        if hasattr(config, "num_frames"):
+            config.num_frames = num_frames
 
         hidden_dim = (
             config.model_config["embed_dim"]
