@@ -40,4 +40,7 @@ python models/train.py   --data_root C:\Users\ooo91\Desktop\School\ComputerVisio
 
 python models/trainv2.py --data_root C:\Users\ooo91\Desktop\School\ComputerVision\Final\test_dataset --train_metadata C:\Users\ooo91\Desktop\School\ComputerVision\Final\test_dataset\train_subset.json --val_metadata C:\Users\ooo91\Desktop\School\ComputerVision\Final\test_dataset\val_subset.json --model videomae_v2 --batch_size 8 --gpus 1 --num_train 50000   --num_val 5000
 
-python models/trainv2.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --model videomae_v2 --batch_size 8 --gpus 1 --num_train 50000   --num_val 5000
+python models/trainv2.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --model videomae_v2 --batch_size 8 --gpus 1 --num_train 100000   --num_val 5000
+
+
+python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/videomae_v2/last.ckpt --model videomae_v2 --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --subset test --batch_size 8 --gpus 1 --take_num 1000

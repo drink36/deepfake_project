@@ -20,17 +20,19 @@ class VideoMetadata:
     video_frames: int = 0
     fps: float = 25.0
     extra_data: dict = None 
-    def __init__(self, file: str, split: str = "train", fake_periods: List[List[float]] = None, **kwargs):
+    def __init__(self, file: str, split: str = "train",**kwargs):
         self.file = file
         self.split = split
-        self.fake_periods = fake_periods if fake_periods is not None else []
         self.extra_data = kwargs
-        
+        visual_fake_segments = kwargs.get("visual_fake_segments", None)
+        if visual_fake_segments:
+            self.fake_periods = visual_fake_segments
+        else:
+            self.fake_periods = []
         # 從 JSON 讀取這些欄位，如果沒有就用預設值
         self.video_frames = kwargs.get('video_frames', 0)
         self.duration = kwargs.get('duration', 0.0)
         
-        # <--- 關鍵修正：嘗試從 kwargs 抓 fps，抓不到就預設 25
         self.fps = kwargs.get('fps', 25.0)
 
 def read_video_decord(path: str, resize_shape: tuple = None):
@@ -118,8 +120,8 @@ class DeepfakeDataset(IterableDataset):
             elif self.use_seg_label:
                 frame_label = torch.zeros(len(video))
                 for begin, end in meta.fake_periods:
-                    idx_begin = int(begin * self.fps)
-                    idx_end = int(end * self.fps)
+                    idx_begin = int(begin * meta.fps)   # 改這裡
+                    idx_end = int(end * meta.fps)       # 改這裡
                     frame_label[idx_begin: idx_end] = 1
                 
                 seg_chunks = torch.split(frame_label, self.use_seg_label)
@@ -135,8 +137,8 @@ class DeepfakeDataset(IterableDataset):
             else:
                 frame_label = torch.zeros(len(video))
                 for begin, end in meta.fake_periods:
-                    idx_begin = int(begin * self.fps)
-                    idx_end = int(end * self.fps)
+                    idx_begin = int(begin * meta.fps)   # 改
+                    idx_end = int(end * meta.fps)       # 改
                     idx_begin = max(0, idx_begin)
                     idx_end = min(len(video), idx_end)
                     frame_label[idx_begin: idx_end] = 1
@@ -196,7 +198,7 @@ class DeepfakeClipDataset(Dataset):
     def __init__(self, 
                  data_root: str, 
                  metadata: list,  # 你的 VideoMetadata list
-                 clip_len: int = 16, # 3D CNN 通常用 8, 16, 32
+                 clip_len: int = 32, # 3D CNN 通常用 8, 16, 32
                  frame_interval: int = 1, # 跳幀採樣 (1=連續, 2=每隔1張採1張)
                  image_size: int = 224, # VideoMAE/TimeSformer 通常要 224
                  take_num: Optional[int] = None,

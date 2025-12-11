@@ -93,8 +93,10 @@ class DataPreprocessor:
         print(f"\nGenerating Evaluation Set (Source: {source_split}, Filter: {filter_origin_split}, Count: {take_num})...")
 
         source_data = self.splits[source_split]
-        
-        filtered_data = [item for item in source_data if item.get('split') == filter_origin_split]
+        if filter_origin_split is None:
+            filtered_data = source_data
+        else:
+            filtered_data = [item for item in source_data if item.get('split') == filter_origin_split]
         
         final_dataset = filtered_data[:take_num]
         
@@ -110,7 +112,7 @@ class DataPreprocessor:
             for item in final_dataset:
                 f.write(item['file'] + '\n')
         print(f"✅ Saved TXT : {output_txt_name}")
-        
+
 
 if __name__ == "__main__":
     
@@ -124,7 +126,6 @@ if __name__ == "__main__":
     
     
     processor.save_main_splits()
-
     processor.generate_eval_set(
         source_split='train',         
         filter_origin_split='train',

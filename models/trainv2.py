@@ -68,8 +68,6 @@ if __name__ == "__main__":
         from data.dataset import VideoMetadata
         train_meta_obj = [VideoMetadata(**item) for item in train_meta]
         val_meta_obj = [VideoMetadata(**item) for item in val_meta]
-        if args.num_train: train_meta_obj = train_meta_obj[:args.num_train]
-        if args.num_val: val_meta_obj = val_meta_obj[:args.num_val]
 
         train_dataset = DeepfakeClipDataset(
             data_root=args.data_root,
