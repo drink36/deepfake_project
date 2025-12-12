@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # ===== 4. Trainer =====
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f"./ckpt/{args.model}",
+        dirpath=f"./ckpt/test/{args.model}",
         save_last=True,
         filename=args.model + "-{epoch}-{val_loss:.3f}",
         monitor="val_loss",

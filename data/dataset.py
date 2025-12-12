@@ -20,7 +20,7 @@ class VideoMetadata:
     video_frames: int = 0
     fps: float = 25.0
     extra_data: dict = None 
-    def __init__(self, file: str, split: str = "train",**kwargs):
+    def __init__(self, file: str, split: str = "",**kwargs):
         self.file = file
         self.split = split
         self.extra_data = kwargs
@@ -47,7 +47,7 @@ def read_video_decord(path: str, resize_shape: tuple = None):
 
         video_data = vr.get_batch(range(len(vr))).asnumpy()
         video = torch.from_numpy(video_data).permute(0, 3, 1, 2)
-        return video.float() / 255.0
+        return video
     except Exception as e:
         print(f"Error reading {path}: {e}")
         return torch.empty(0)
@@ -198,7 +198,7 @@ class DeepfakeClipDataset(Dataset):
     def __init__(self, 
                  data_root: str, 
                  metadata: list,  # 你的 VideoMetadata list
-                 clip_len: int = 32, # 3D CNN 通常用 8, 16, 32
+                 clip_len: int = 16, # 3D CNN 通常用 8, 16, 32
                  frame_interval: int = 1, # 跳幀採樣 (1=連續, 2=每隔1張採1張)
                  image_size: int = 224, # VideoMAE/TimeSformer 通常要 224
                  take_num: Optional[int] = None,
