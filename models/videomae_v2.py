@@ -7,7 +7,7 @@ from transformers import AutoModel, AutoConfig
 class DeepfakeVideoMAEV2(pl.LightningModule):
     def __init__(
         self,
-        learning_rate: float = 1e-4,
+        learning_rate: float = 1e-5,
         num_classes: int = 1,
         freeze_backbone: bool = False,
         distributed: bool = False,

@@ -46,7 +46,7 @@ python models/trainv2.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-P
 python models/trainv2.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --model videomae_v2 --batch_size 8 --gpus 1 --num_train 100000   --num_val 5000 --clip_len 32
 
 
-python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/videomae_v2/videomae_v2-epoch=7-val_loss=0.130.ckpt --model videomae_v2 --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --subset test --batch_size 8 --gpus 1 --take_num 100000
+python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/videomae_v2_20251212_150507/last.ckpt --model videomae_v2 --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --subset test --batch_size 8 --gpus 1 --take_num 1000
 
 
 python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/videomae_v2/videomae_v2-epoch=7-val_loss=0.130.ckpt --model videomae_v2 --metadata_txt /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/testB_files.txt --subset testB --batch_size 8 --gpus 1

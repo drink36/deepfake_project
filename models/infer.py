@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.dataset import DeepfakeVideoDataset, VideoMetadata 
 from xception import Xception
 from models.videomae_v2 import DeepfakeVideoMAEV2 
-
+from datetime import datetime
 parser = argparse.ArgumentParser(description="Deepfake inference")
 parser.add_argument("--data_root", type=str)
 parser.add_argument("--checkpoint", type=str)
@@ -86,9 +86,11 @@ if __name__ == '__main__':
         collate_fn=custom_collate
     )
     # add take num
-    save_path = f"output/{args.model}_{args.subset}_{len(test_dataset)}.txt"
+    date = datetime.now().strftime("%Y%m%d-%H%M%S")
+    save_path = f"output/{args.model}_{args.subset}_{len(test_dataset)}_{date}.txt"
+    save_path_soft = f"output/{args.model}_{args.subset}_{len(test_dataset)}_{date}_soft.txt"
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-
+    
     processed_files = set()
     if args.resume is not None and os.path.exists(args.resume):
         with open(args.resume, "r") as f:
@@ -99,7 +101,7 @@ if __name__ == '__main__':
     clip_len = 16
     inf_batch_size = args.batch_size # GPU Batch Size
 
-    with open(save_path, "w") as f:
+    with open(save_path, "w") as f, open(save_path_soft,"w") as f_soft:
         with torch.inference_mode():
             for batch_videos, batch_filenames in tqdm(test_loader):
                 
@@ -112,30 +114,35 @@ if __name__ == '__main__':
                 video = video.float() / 255.0
                 video = video.to(device) # (T, C, H, W)
                 pred = 0.0
+                pred_soft = 0.0
 
                 if is_3d_model:
                     # === VideoMAE 優化邏輯 ===
                     T = video.shape[0]
-                    
-                    # 1. 補齊長度
+
                     if T < clip_len:
                         padding = clip_len - T
                         last_frame = video[-1].unsqueeze(0)
                         video = torch.cat([video, last_frame.repeat(padding, 1, 1, 1)], dim=0)
                         T = clip_len
 
-                    
-                    n_clips = T // clip_len
+                    # 2) 先切「完整」的 clips（0,16,32,...）
+                    n_full = T // clip_len
+                    full_part = video[:n_full * clip_len]  # (n_full*16, C, H, W)
 
-                    video_trimmed = video[:n_clips * clip_len]
-                    
-                    # (N, 16, C, H, W)
-                    clips = video_trimmed.reshape(n_clips, clip_len, 3, image_size, image_size)
-                    
-                    # Permute -> (N, C, 16, H, W)
+                    # (n_full, 16, C, H, W)
+                    clips = full_part.reshape(n_full, clip_len, video.shape[1], video.shape[2], video.shape[3])
+
+                    # 3) 如果有尾巴，加一個「最後16幀」clip（可能跟前一段重疊）
+                    if T % clip_len != 0:
+                        tail = video[-clip_len:]  # (16, C, H, W)
+                        clips = torch.cat([clips, tail.unsqueeze(0)], dim=0)
+
+                    # 4) -> (N, C, 16, H, W)
                     clips = clips.permute(0, 2, 1, 3, 4)
-                    
 
+                    
+                    n_clips = clips.shape[0]
                     # 4. 批次推論
                     all_logits = []
                     for k in range(0, n_clips, inf_batch_size):
@@ -146,6 +153,7 @@ if __name__ == '__main__':
                     if all_logits:
                         all_logits = torch.cat(all_logits, dim=0).flatten()
                         pred = all_logits.max().item()
+                        pred_soft= torch.logsumexp(all_logits,dim=0)
 
                 else:
                     # === Xception 邏輯 ===
@@ -162,9 +170,13 @@ if __name__ == '__main__':
                     if all_logits:
                         all_logits = torch.cat(all_logits, dim=0).flatten()
                         pred = all_logits.max().item()
+                        pred_soft= torch.logsumexp(all_logits,dim=0)
                 prob = torch.sigmoid(torch.tensor(pred)).item()
+                prob_soft = torch.sigmoid(pred_soft).item()
                 if args.prob:
                     f.write(f"{file_name};{prob}\n")
+                    f_soft.write(f"{file_name};{prob_soft.item()}\n")
                 else:
                     f.write(f"{file_name};{pred}\n")
+                    f_soft.write(f"{file_name};{pred_soft.item()}\n")
                 f.flush()

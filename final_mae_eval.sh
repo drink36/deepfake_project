@@ -7,6 +7,5 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --ntasks-per-node=1
-
 conda activate cv_env
-python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/videomae_v2/videomae_v2-epoch=7-val_loss=0.130.ckpt --model videomae_v2 --metadata_txt /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/testB_files.txt --subset testB --batch_size 32 --gpus 1 --prob true
+python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/videomae_v2_20251212_150507/last.ckpt --model videomae_v2 --metadata_txt /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/testB_files.txt --subset testB --batch_size 32 --gpus 1

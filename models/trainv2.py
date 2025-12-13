@@ -12,7 +12,7 @@ from data.dataset import DeepfakeDataset, DeepfakeClipDataset, VideoMetadata
 from xception import Xception
 from utils import LrLogger, EarlyStoppingLR
 from models.videomae_v2 import DeepfakeVideoMAEV2
-
+from datetime import datetime
 parser = argparse.ArgumentParser(description="Classification model training")
 parser.add_argument("--data_root", type=str)
 parser.add_argument("--train_metadata", type=str, required=True)
@@ -32,7 +32,7 @@ torch.backends.cudnn.allow_tf32 = True
 
 
 if __name__ == "__main__":
-    learning_rate = 1e-4
+    learning_rate = 1e-5
     gpus = args.gpus
     use_clip = False
     image_size = 96  
@@ -99,10 +99,13 @@ if __name__ == "__main__":
             image_size=image_size,
             take_num=args.num_val,
         )
-
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ckpt_dir = f"./ckpt/{args.model}_{timestamp}"
+    if not os.path.exists(ckpt_dir):
+        os.makedirs(ckpt_dir)
     # ===== 4. Trainer =====
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f"./ckpt/test/{args.model}",
+        dirpath=ckpt_dir,
         save_last=True,
         filename=args.model + "-{epoch}-{val_loss:.3f}",
         monitor="val_loss",
@@ -117,7 +120,8 @@ if __name__ == "__main__":
         devices=args.gpus,
         strategy="ddp" if args.gpus > 1 else "auto",
         log_every_n_steps=50,
-    )
+        gradient_clip_val=1.0,
+        )
 
     # ===== 5. 開始訓練 =====
     train_loader = DataLoader(
