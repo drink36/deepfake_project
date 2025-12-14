@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import lightning.pytorch as pl
 from transformers import AutoModel, AutoConfig
-
+from torchmetrics import Accuracy, AUROC
 
 class DeepfakeVideoMAEV2(pl.LightningModule):
     def __init__(
@@ -60,6 +60,11 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
 
         # 6. loss
         self.criterion = nn.BCEWithLogitsLoss()
+
+        self.train_acc = Accuracy(task="binary")
+        self.val_acc = Accuracy(task="binary")
+        self.val_auroc = AUROC(task="binary")
+
     def ensure_train_mode(self):
         """Make sure every layer in backbone enters train() mode."""
         for m in self.backbone.modules():
@@ -78,12 +83,7 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
 
         x = self._normalize(x)
 
-        # backbone forward
         outputs = self.backbone(x)
-
-        # VideoMAEv2_Base 根據 config:
-        # - num_classes = 0, use_mean_pooling = True
-        #   很有機會直接回傳 (B, hidden_dim) tensor 作為 pooled feature
         if isinstance(outputs, torch.Tensor):
             features = outputs                      # 可能是 (B, hidden_dim) 或 (B, L, hidden_dim)
         elif hasattr(outputs, "last_hidden_state"):
@@ -113,9 +113,12 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
             print("Backbone TRAIN modules:", sum(1 for m in self.backbone.modules() if m.training), "Backbone EVAL modules:", sum(1 for m in self.backbone.modules() if not m.training))
         x, y = batch[:2]                # x: (B, 3, T, H, W), y: (B,)
         logits = self(x).squeeze(-1)    # (B,)
+        y = y.float()
         loss = self.criterion(logits, y.float())
-
+        probs = torch.sigmoid(logits)
+        self.train_acc.update(probs, y.int())
         self.log("train_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
+        self.log("train_acc", self.train_acc, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -123,13 +126,16 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
         logits = self(x).squeeze(-1)
         loss = self.criterion(logits, y.float())
         probs = torch.sigmoid(logits)
-        preds = (probs > 0.5).float()
-        acc = (preds == y).float().mean()
+        self.val_acc.update(probs, y.int())
+        self.val_auroc.update(probs, y.int())
 
         self.log("val_loss", loss, prog_bar=True, on_epoch=True)
-        self.log("val_acc", acc, prog_bar=True, on_epoch=True)
-        return {"val_loss": loss, "val_acc": acc}
-
+        return loss
+    def on_validation_epoch_end(self):
+        self.log("val_acc", self.val_acc.compute(), prog_bar=True, sync_dist=True)
+        self.log("val_auroc", self.val_auroc.compute(), prog_bar=True, sync_dist=True)
+        self.val_acc.reset()
+        self.val_auroc.reset()
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
             filter(lambda p: p.requires_grad, self.parameters()),

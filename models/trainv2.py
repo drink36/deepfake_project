@@ -11,14 +11,15 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from data.dataset import DeepfakeDataset, DeepfakeClipDataset, VideoMetadata
 from xception import Xception
 from utils import LrLogger, EarlyStoppingLR
-from models.videomae_v2 import DeepfakeVideoMAEV2
+from videomae_v2 import DeepfakeVideoMAEV2
+from R2_1D import R2Plus1D
 from datetime import datetime
 parser = argparse.ArgumentParser(description="Classification model training")
 parser.add_argument("--data_root", type=str)
 parser.add_argument("--train_metadata", type=str, required=True)
 parser.add_argument("--val_metadata", type=str, required=True)
 parser.add_argument("--batch_size", type=int, default=8)
-parser.add_argument("--model", type=str, choices=["xception", "meso4", "videomae_v2"])
+parser.add_argument("--model", type=str, choices=["xception", "r2plus1d", "videomae_v2"])
 parser.add_argument("--gpus", type=int, default=1)
 parser.add_argument("--max_epochs", type=int, default=50)
 parser.add_argument("--num_train", type=int, default=None)
@@ -50,7 +51,13 @@ if __name__ == "__main__":
         )
         image_size = 224         
         use_clip = True          
-
+    elif args.model == "r2plus1d":
+        model = R2Plus1D(
+            learning_rate=learning_rate,
+            distributed=gpus > 1,
+        )
+        image_size = 224
+        use_clip = True
     else:
         raise ValueError(f"Unknown model: {args.model}")
 
