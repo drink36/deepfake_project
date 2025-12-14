@@ -107,9 +107,18 @@ class DeepfakeDataset(IterableDataset):
         for meta in metadata_to_iter:
             video_path = os.path.join(self.data_root, meta.split, meta.file)
             video = read_video_decord(video_path, resize_shape=target_shape)
-            
+
             if video.numel() == 0:
                 continue
+
+            # ---- FIX: uint8 -> float, normalize (match your xception inference) ----
+            if video.dtype == torch.uint8:
+                video = video.float().div_(255.0)
+            else:
+                video = video.float()
+
+            # If your Xception training/inference uses (-1, 1) normalization:
+            video = (video - 0.5) / 0.5
 
             # 3. 標籤邏輯
             if self.use_video_label:

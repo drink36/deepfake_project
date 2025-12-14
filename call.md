@@ -57,3 +57,5 @@ python models/trainv2.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-P
 python models/evaluate.py videomae_v2_val_10000_20251214-011831_combined.txt validation_metadata_filtered_top10000_combined.json
 
 python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/r2plus1d_20251214_050221/last.ckpt --model r2plus1d --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --subset test --batch_size 32 --gpus 1 --take_num 1000
+
+python models/infer.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --checkpoint ./ckpt/xception/last-v1.ckpt --model xception --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --subset test --batch_size 32 --gpus 1 --take_num 1000

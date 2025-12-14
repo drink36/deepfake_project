@@ -9,4 +9,4 @@
 #SBATCH --ntasks-per-node=1
 
 conda activate cv_env
-python /users/PAS2119/drink36/AV-Deepfake1M/examples/xception/new_train.py  --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus   --model xception   --batch_size 1024   --precision bf16-mixed --gpus 1 --num_train 50000 --num_val 5000 --max_epochs 10
+python models/trainv2.py --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json --model xception --batch_size 1024 --gpus 1 --num_train 100000   --num_val 5000 --max_epochs 15

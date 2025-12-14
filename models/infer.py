@@ -40,7 +40,7 @@ if __name__ == '__main__':
     if args.model == "xception":
         print("🚀 Loading Xception...")
         model = Xception.load_from_checkpoint(args.checkpoint, lr=None, distributed=False).eval()
-        image_size = 299 
+        image_size = 96
         is_3d_model = False
     elif args.model == "videomae_v2":
         print("🚀 Loading VideoMAE V2...")
@@ -119,13 +119,14 @@ if __name__ == '__main__':
                 
                 if file_name in processed_files: continue
                 if video.numel() == 0: continue
-                video = video.float() / 255.0
-                video = video.to(device) # (T, C, H, W)
+
                 pred = 0.0
                 pred_soft = 0.0
 
                 if is_3d_model:
                     # === VideoMAE 優化邏輯 ===
+                    video = video.float() / 255.0
+                    video = video.to(device) # (T, C, H, W)
                     T = video.shape[0]
 
                     if T < clip_len:
@@ -164,14 +165,14 @@ if __name__ == '__main__':
                         pred_soft= torch.logsumexp(all_logits,dim=0)
 
                 else:
-                    # === Xception 邏輯 ===
-                    # Xception Normalize 通常是 mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
-                    # 假設 Loader 出來已經是 0~1，這裡做簡單處理
-                    video = (video - 0.5) / 0.5 
+                    # === Xception 優化邏輯 ===
+                    video = video.float() / 255.0              # CPU
+                    video = (video - 0.5) / 0.5                # CPU normalize
                     
                     all_logits = []
                     for k in range(0, len(video), inf_batch_size):
-                        batch_frames = video[k : k + inf_batch_size]
+                        batch_frames = video[k: k + inf_batch_size].contiguous()  # CPU
+                        batch_frames = batch_frames.to(device, non_blocking=True) # GPU (per batch)
                         logits = model(batch_frames)
                         all_logits.append(logits)
                         

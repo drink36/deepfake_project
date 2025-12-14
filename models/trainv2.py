@@ -36,11 +36,11 @@ if __name__ == "__main__":
     learning_rate = 1e-5
     gpus = args.gpus
     use_clip = False
-    image_size = 96  
+    image_size = 224
     if args.model == "xception":
         print("🚀 Initializing Xception...")
         model = Xception(learning_rate, distributed=gpus > 1)
-        image_size = 299
+        image_size = 96
         use_clip = False
 
     elif args.model == "videomae_v2":
@@ -92,7 +92,6 @@ if __name__ == "__main__":
         )
 
     else:
-        # ---- 2D: 原本 per-frame Dataset（Xception 用） ----
         print(f"🖼️ Using 2D Frame Dataset (Size={image_size})")
         train_dataset = DeepfakeDataset(
             data_root=args.data_root,
@@ -136,7 +135,7 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         num_workers=8,
         pin_memory=True,
-        shuffle=True,
+        shuffle= True if use_clip else None,
         persistent_workers=True,
     )
 
