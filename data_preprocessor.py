@@ -37,9 +37,9 @@ class DataPreprocessor:
         
         print(f"Filtering modify_types: {valid_modify_types}...")
         df_all = df_all[df_all['modify_type'].isin(valid_modify_types)].reset_index(drop=True)
-
+        print(f"-> Total samples after filtering: {len(df_all)}")
         df_real = df_all[df_all['modify_type'] == 'real']
-        df_modified = df_all[df_all['modify_type'].isin(['both_modified', 'visual_modified'])]
+        df_modified = df_all[df_all['modify_type'] != 'real']
 
         print(f"-> Real samples: {len(df_real)}")
         print(f"-> Modified samples: {len(df_modified)}")
@@ -66,7 +66,7 @@ class DataPreprocessor:
 
         print(f"✅ Splitting Done! Sizes: Train={len(self.splits['train'])}, Val={len(self.splits['val'])}, Test={len(self.splits['test'])}")
 
-    def save_main_splits(self):
+    def save_main_splits(self,sname: Optional[str] = None):
         if not self.splits:
             print("⚠️ Data not loaded. Run load_and_process_splits() first.")
             return
@@ -74,7 +74,8 @@ class DataPreprocessor:
         for name, data in self.splits.items():
             fname = f"{name}_metadata_filtered.json" 
             if name == 'val': fname = 'validation_metadata_filtered.json'
-            
+            if sname is not None:
+                fname = f"{sname}_{fname}"
             out_path = os.path.join(self.root_dir, fname)
             with open(out_path, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -122,28 +123,28 @@ if __name__ == "__main__":
     processor = DataPreprocessor(root_dir=MY_ROOT_DIR)
 
     
-    processor.load_and_process_splits()
+    processor.load_and_process_splits(valid_modify_types=['audio_modified'])
     
     
-    processor.save_main_splits()
-    processor.generate_eval_set(
-        source_split='train',         
-        filter_origin_split='train',
-        take_num=5000,
-        output_json_name='train_subset.json',
-        output_txt_name='train_subset.txt'
-    )
-    processor.generate_eval_set(
-        source_split='val',         
-        filter_origin_split='train',
-        take_num=1000,
-        output_json_name='val_subset.json',
-        output_txt_name='val_subset.txt'
-    )
-    processor.generate_eval_set(
-        source_split='test',         
-        filter_origin_split='train',
-        take_num=1000,
-        output_json_name='test_subset.json',
-        output_txt_name='test_subset.txt'
-    )
+    processor.save_main_splits(sname='audio_mod')
+    # processor.generate_eval_set(
+    #     source_split='train',         
+    #     filter_origin_split='train',
+    #     take_num=5000,
+    #     output_json_name='train_subset.json',
+    #     output_txt_name='train_subset.txt'
+    # )
+    # processor.generate_eval_set(
+    #     source_split='val',         
+    #     filter_origin_split='train',
+    #     take_num=1000,
+    #     output_json_name='val_subset.json',
+    #     output_txt_name='val_subset.txt'
+    # )
+    # processor.generate_eval_set(
+    #     source_split='test',         
+    #     filter_origin_split='train',
+    #     take_num=1000,
+    #     output_json_name='test_subset.json',
+    #     output_txt_name='test_subset.txt'
+    # )

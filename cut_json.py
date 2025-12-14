@@ -8,6 +8,7 @@ def create_top_n_json(input_json, n, output_json=None):
         data = json.load(f)
 
     # 取前 n 筆
+    print(f"🔍 原始資料共有 {len(data)} 筆")
     top_n = data[:n]
     filename = os.path.basename(input_json)  # 拿掉路徑，只留檔名
 

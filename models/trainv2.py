@@ -56,7 +56,7 @@ if __name__ == "__main__":
             learning_rate=learning_rate,
             distributed=gpus > 1,
         )
-        image_size = 224
+        image_size = 112
         use_clip = True
     else:
         raise ValueError(f"Unknown model: {args.model}")

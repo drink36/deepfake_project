@@ -11,7 +11,6 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
         num_classes: int = 1,
         freeze_backbone: bool = False,
         distributed: bool = False,
-        num_frames: int = 16,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["backbone"])
@@ -30,8 +29,6 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
         if hasattr(config, "model_config"):
             mc = config.model_config
             hidden_dim = mc.get("embed_dim", None)
-        if hasattr(config, "num_frames"):
-            config.num_frames = num_frames
 
         hidden_dim = (
             config.model_config["embed_dim"]
@@ -84,26 +81,8 @@ class DeepfakeVideoMAEV2(pl.LightningModule):
         x = self._normalize(x)
 
         outputs = self.backbone(x)
-        if isinstance(outputs, torch.Tensor):
-            features = outputs                      # 可能是 (B, hidden_dim) 或 (B, L, hidden_dim)
-        elif hasattr(outputs, "last_hidden_state"):
-            # 標準 HuggingFace 型式
-            features = outputs.last_hidden_state    # (B, L, hidden_dim)
-        else:
-            # 一般情況下 outputs[0] 是 last_hidden_state
-            features = outputs[0]
 
-        # 根據 shape 做處理：
-        if features.dim() == 2:
-            # (B, hidden_dim) → 已經 pool 好了，直接用
-            pooled = features
-        elif features.dim() == 3:
-            # (B, L, hidden_dim) → 再 mean pool 一次（保險）
-            pooled = features.mean(dim=1)
-        else:
-            raise ValueError(f"[VideoMAE] Unexpected backbone output shape: {features.shape}")
-
-        logits = self.classifier(pooled)            # (B, 1)
+        logits = self.classifier(outputs)            # (B, 1)
         return logits
 
     # ---------- Lightning hooks ----------

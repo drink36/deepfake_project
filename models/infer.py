@@ -11,12 +11,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.dataset import DeepfakeVideoDataset, VideoMetadata 
 from xception import Xception
-from models.videomae_v2 import DeepfakeVideoMAEV2 
+from videomae_v2 import DeepfakeVideoMAEV2 
+from R2_1D import R2Plus1D
 from datetime import datetime
 parser = argparse.ArgumentParser(description="Deepfake inference")
 parser.add_argument("--data_root", type=str)
 parser.add_argument("--checkpoint", type=str)
-parser.add_argument("--model", type=str, choices=["xception", "videomae_v2"]) 
+parser.add_argument("--model", type=str, choices=["xception", "videomae_v2", "r2plus1d"])
 parser.add_argument("--batch_size", type=int, default=32) # GPU Batch Size
 parser.add_argument("--subset", type=str, default="test") 
 parser.add_argument("--gpus", type=int, default=1)
@@ -46,6 +47,12 @@ if __name__ == '__main__':
         model = DeepfakeVideoMAEV2.load_from_checkpoint(
             args.checkpoint, lr=None, distributed=False).eval()
         image_size = 224 
+        is_3d_model = True
+    elif args.model == "r2plus1d":
+        print("🚀 Loading R(2+1)D...")
+        model = R2Plus1D.load_from_checkpoint(
+            args.checkpoint, lr=None, distributed=False).eval()
+        image_size = 112 
         is_3d_model = True
     else:
         raise ValueError(f"Unknown model: {args.model}")
@@ -100,7 +107,8 @@ if __name__ == '__main__':
     print(f"🚀 Start Inference on {len(test_dataset)} files...")
     clip_len = 16
     inf_batch_size = args.batch_size # GPU Batch Size
-
+    print(f"file_path: {save_path}")
+    print(f"file_path_soft: {save_path_soft}")
     with open(save_path, "w") as f, open(save_path_soft,"w") as f_soft:
         with torch.inference_mode():
             for batch_videos, batch_filenames in tqdm(test_loader):
