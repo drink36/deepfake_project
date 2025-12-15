@@ -2,7 +2,7 @@
 #SBATCH --account=PAS3162 
 #SBATCH --job-name=test_osc_cv_final_drink36
 #SBATCH --time=12:00:00
-#SBATCH --cluster=ascend
+#SBATCH --cluster=pitzer
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=8

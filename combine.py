@@ -11,6 +11,8 @@ def combine_json(input_json, input2_json, output_json=None, n=None):
     # 合併兩個列表
     if n is not None:
         combined = data+ data2[:n]
+    else:
+        combined = data + data2
     filename = os.path.basename(input_json)
 
     # 自動產生輸出檔名

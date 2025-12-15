@@ -1,0 +1,21 @@
+
+CondaError: Run 'conda init' before 'conda activate'
+
+/users/PAS2119/drink36/miniconda3/envs/cv_env/lib/python3.13/site-packages/timm/models/_factory.py:138: UserWarning: Mapping deprecated model name xception to current legacy_xception.
+  model = create_fn(
+🚀 Loading Xception...
+📄 Loading metadata from: /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/testB_files.txt
+Traceback (most recent call last):
+  File "/users/PAS2119/drink36/deepfake_project/models/infer.py", line 68, in <module>
+    data = json.load(f)
+  File "/users/PAS2119/drink36/miniconda3/envs/cv_env/lib/python3.13/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/users/PAS2119/drink36/miniconda3/envs/cv_env/lib/python3.13/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/users/PAS2119/drink36/miniconda3/envs/cv_env/lib/python3.13/json/decoder.py", line 348, in decode
+    raise JSONDecodeError("Extra data", s, end)
+json.decoder.JSONDecodeError: Extra data: line 1 column 2 (char 1)

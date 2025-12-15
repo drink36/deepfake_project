@@ -3,27 +3,30 @@ import json
 import pandas as pd
 if __name__ == "__main__":
     
-    videomae_visual = "output/videomae_v2_val_10000_20251214-011831.txt"
-    r2plus1d_visual = "output/r2plus1d_test_10000_20251214-144857.txt"
-    visual_metadata = "validation_metadata_filtered_top10000.json"
-    videomae_audio5 = "videomae_v2_val_10000_20251214-011831_combined.txt"
-    r2plus1d_audio5 = "r2plus1d_test_10000_20251214-144857_combined.txt"
-    audio_metadata5 = "validation_metadata_filtered_top10000_combined.json"
-    videomae_audio2 = "videomae_v2_val_10000_20251214-011831_combined_top2000.txt"
-    r2plus1d_audio2 = "r2plus1d_test_10000_20251214-144857_combined_top2000.txt"
-    audio_metadata2 = "validation_metadata_filtered_top10000_combined_top2000.json"
+    videomae_visual = "output/videomae_v2_test_10000_20251215-035913.txt"
+    r2plus1d_visual = "output/r2plus1d_test_10000_20251215-040018.txt"
+    xception_visual = "output/xception_test_10000_20251215-143319.txt"
+    visual_metadata = "test_metadata_filtered_top10000.json"
+    videomae_audio5 = "videomae_v2_test_10000_20251215-035913_combined.txt"
+    r2plus1d_audio5 = "r2plus1d_test_10000_20251215-040018_combined.txt"
+    xception_audio5 = "xception_test_10000_20251215-143319_combined.txt"
+    audio_metadata5 = "test_metadata_filtered_top10000_combined.json"
+    videomae_audio2 = "videomae_v2_test_10000_20251215-035913_combined_top2000.txt"
+    r2plus1d_audio2 = "r2plus1d_test_10000_20251215-040018_combined_top2000.txt"
+    xception_audio2 = "xception_test_10000_20251215-143319_combined_top2000.txt"
+    audio_metadata2 = "test_metadata_filtered_top10000_combined_top2000.json"
     videomae_testB=0.8103299736976624
     r2plus1d_testB=0.7260900735855103
-    xception_testB=0.5729
+    xception_testB=0.5787936449050903
     videomae_auc = auc(videomae_visual, visual_metadata, "file","fake_segments")
     r2plus1d_auc = auc(r2plus1d_visual, visual_metadata, "file","fake_segments")
-    xception_auc = 0.7829
+    xception_auc = auc(xception_visual, visual_metadata, "file","fake_segments")
     videomae_5_auc = auc(videomae_audio5, audio_metadata5, "file","fake_segments")
     r2plus1d_5_auc = auc(r2plus1d_audio5, audio_metadata5, "file","fake_segments")
-    xception_5_auc = 0.6568
+    xception_5_auc = auc(xception_audio5, audio_metadata5, "file","fake_segments")
     videomae_2_auc = auc(videomae_audio2, audio_metadata2, "file","fake_segments")
     r2plus1d_2_auc = auc(r2plus1d_audio2, audio_metadata2, "file","fake_segments")
-    xception_2_auc = 0.7054
+    xception_2_auc = auc(xception_audio2, audio_metadata2, "file","fake_segments")
     print(f"VideoMAE AUC: {videomae_auc:.4f}")
     print(f"R2Plus1D AUC: {r2plus1d_auc:.4f}")
     print(f"Xception AUC: {xception_auc:.4f}")
