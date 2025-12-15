@@ -57,7 +57,10 @@ if __name__ == '__main__':
     else:
         raise ValueError(f"Unknown model: {args.model}")
     model.to(device)
-    model.eval()
+    if args.model in ["videomae_v2", "r2plus1d"]:
+        model.eval()
+    else:
+        model.train()
     # === 2. 準備數據 ===
     if args.metadata_file is not None:
         print(f"📄 Loading metadata from: {args.metadata_file}")
@@ -166,8 +169,8 @@ if __name__ == '__main__':
 
                 else:
                     # === Xception 優化邏輯 ===
-                    video = video.float() / 255.0              # CPU
-                    video = (video - 0.5) / 0.5                # CPU normalize
+                    video = video.float()
+
                     
                     all_logits = []
                     for k in range(0, len(video), inf_batch_size):
