@@ -2,6 +2,8 @@
 
 This project implements and compares three different deep learning architectures for deepfake video detection: **Xception**, **R(2+1)D**, and **VideoMAE V2**. The project is designed to run on high-performance computing clusters (using Slurm) and includes scripts for training, inference, and evaluation on the AV-Deepfake1M-PlusPlus dataset.
 
+> **Note for TAs / Instructors:** Please refer to [example.md](example.md) for a quick guide containing the exact commands and configurations used to produce our results on the cluster.
+
 ## 🚀 Key Features
 
 *   **Multi-Model Support**:
@@ -38,8 +40,9 @@ deepfake_project/
 
 ## 🛠️ Setup
 
-1.  **Environment**: Ensure you have a Conda environment set up with PyTorch and necessary dependencies.
+1.  **Environment**: Ensure you have a Conda environment set up with PyTorch and necessary dependencies, specifically with Python 3.10.
     ```bash
+    conda create -n cv_env python=3.10
     conda activate cv_env
     ```
 2.  **Dependencies**: Key libraries include `torch`, `lightning`, `torchvision`, `timm`, `transformers`, `pandas`, and `decord`.
@@ -117,5 +120,15 @@ See `helper/README.md` for detailed instructions on using utility scripts.
 
 The project generates a comparison plot `grouped_model_auc.png` showing the AUC performance of the three models across different test subsets (Visual, Audio-Visual 2K/5K, TestB).
 
+![Model Comparison](fig/grouped_model_auc.png)
+
 ---
 *Created for the Computer Vision Final Project.*
+
+## 📧 Contact
+
+For any questions or inquiries, please open an issue in this repository or contact the project contributors directly.
+
+## 🙏 Acknowledgements
+
+We would like to thank [mention any individuals, institutions, or projects that provided significant help or resources].
