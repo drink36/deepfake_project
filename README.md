@@ -2,7 +2,7 @@
 
 This project implements and compares three different deep learning architectures for deepfake video detection: **Xception**, **R(2+1)D**, and **VideoMAE V2**. The project is designed to run on high-performance computing clusters (using Slurm) and includes scripts for training, inference, and evaluation on the AV-Deepfake1M-PlusPlus dataset.
 
-> **Note for TAs / Instructors:** Please refer to [example.md](example.md) for a quick guide containing the exact commands and configurations used to produce our results on the cluster.
+> **Note for TAs / Instructors:** Please refer to [example.md](example.md) for a **step-by-step inference guide** (GPU required). The provided commands and configurations reflect the setup used to produce our reported results on the cluster.
 
 ## 🚀 Key Features
 
