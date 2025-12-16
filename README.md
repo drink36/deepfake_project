@@ -62,6 +62,9 @@ Training is handled by `models/train.py`. You can run it locally or submit it vi
 *   `--val_metadata`: Path to the validation metadata JSON.
 *   `--model`: Choose from `xception`, `r2plus1d`, `videomae_v2`.
 *   `--batch_size`: Batch size per GPU.
+*   `--gpus`: Number of GPUs to use (default: 1).
+*   `--max_epochs`: Maximum number of training epochs (default: 50).
+*   `--precision`: Precision for training (e.g., `32`, `16-mixed`, `bf16-mixed`; default: `16-mixed`).
 
 **Example (VideoMAE V2):**
 ```bash
@@ -83,6 +86,19 @@ sbatch scripts/final_mae.sh
 ### 2. Inference
 
 Generate prediction scores for a test set using `models/infer.py`. This script produces a text file where each line corresponds to a video and its fake probability.
+
+**Common Arguments:**
+*   `--data_root`: Path to the dataset root directory.
+*   `--checkpoint`: Path to the model checkpoint (`.ckpt` file).
+*   `--model`: Choose from `xception`, `r2plus1d`, `videomae_v2`.
+*   `--batch_size`: Batch size per GPU (default: 32).
+*   `--subset`: Subset of the data to infer on (e.g., `test`, `val`).
+*   `--gpus`: Number of GPUs to use (default: 1).
+*   `--resume`: Path to a file containing a list of already processed files to resume inference.
+*   `--metadata_file`: Path to the metadata JSON file for inference.
+*   `--metadata_txt`: Path to a text file containing video filenames for inference (alternative to `--metadata_file`).
+*   `--take_num`: Number of samples to take from the metadata for inference.
+*   `--prob`: If set to `True`, outputs probabilities (sigmoid of logits) instead of raw logits (default: `False`).
 
 ```bash
 python models/infer.py \
@@ -139,8 +155,6 @@ We provide pre-trained weights for our models.
 
 Please download the available pre-trained model weights. These checkpoints can be used for inference or fine-tuning.
 
----
-*Created for the Computer Vision Final Project.*
 
 ## 📧 Contact
 
@@ -149,3 +163,6 @@ For any questions or inquiries, please open an issue in this repository or conta
 ## 🙏 Acknowledgements
 
 We would like to thank [VideoMAEv2](https://github.com/OpenGVLab/VideoMAEv2) and [AV-Deepfake1M](https://github.com/ControlNet/AV-Deepfake1M/tree/master).
+
+---
+*Created for the Computer Vision Final Project.*

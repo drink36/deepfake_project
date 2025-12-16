@@ -55,7 +55,8 @@ python models/train.py \
     --gpus 1 \
     --num_train 50000 \
     --num_val 5000 \
-    --max_epochs 10
+    --max_epochs 10 \
+    --precision 16-mixed
 ```
 
 ### R(2+1)D
@@ -70,7 +71,8 @@ python models/train.py \
     --gpus 1 \
     --num_train 100000 \
     --num_val 5000 \
-    --max_epochs 20
+    --max_epochs 20 \
+    --precision 16-mixed
 ```
 
 ### VideoMAE V2
@@ -85,7 +87,8 @@ python models/train.py \
     --gpus 1 \
     --num_train 100000 \
     --num_val 5000 \
-    --max_epochs 15
+    --max_epochs 15 \
+    --precision 16-mixed
 ```
 
 ---
