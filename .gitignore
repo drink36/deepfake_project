@@ -5,12 +5,13 @@ __pycache__/
 .env
 .DS_Store
 .vscode/
-*.txt
-*.json
 *.ckpt
 *.pth
 *.gz
 /mini_dataset
 /test_dataset
 *.tar
+*.out
 lightning_logs/
+/result_data
+output/

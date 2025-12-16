@@ -2,105 +2,123 @@ import torch
 import torch.nn as nn
 import lightning.pytorch as pl
 from transformers import AutoModel, AutoConfig
+from torchmetrics import Accuracy, AUROC
 
 class DeepfakeVideoMAEV2(pl.LightningModule):
-    def __init__(self, learning_rate=1e-4, num_classes=1, freeze_backbone=False, distributed=False):
+    def __init__(
+        self,
+        learning_rate: float = 1e-5,
+        num_classes: int = 1,
+        freeze_backbone: bool = False,
+        distributed: bool = False,
+    ):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=["backbone"])
         self.distributed = distributed
-        model_name = "OpenGVLab/VideoMAEv2-Base" 
-        print(f"🚀 Loading {model_name} (Backbone Only)...")
-        
-        # 1. 載入 Config (為了拿 hidden_size)
+        model_name = "OpenGVLab/VideoMAEv2-Base"
+        print(f"🚀 Loading backbone: {model_name}")
         config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
-        
 
         self.backbone = AutoModel.from_pretrained(
             model_name,
+            config=config,
             trust_remote_code=True,
-            config=config
         )
-        hidden_dim = config.model_config['embed_dim'] if isinstance(config.model_config, dict) else config.model_config.embed_dim
-        # 3. 手動建立分類頭 (Head)
-        # VideoMAE V2 Base 的 hidden_size 通常是 768
-        self.classifier = nn.Linear(hidden_dim, num_classes)
-        
-        # === 凍結邏輯 (Partial Fine-tuning) ===
-        if freeze_backbone:
-            print("❄️  Freezing Backbone... Only training the Classifier!")
-            for param in self.backbone.parameters():
-                param.requires_grad = False
-            for param in self.classifier.parameters():
-                param.requires_grad = True
-        else:
-            print("🔧 Strategy: Full Fine-tuning (Training ALL layers)")
-            
-            # [關鍵修正] 1. 先強制把所有參數設為可訓練 (True)
-            # 這能確保不管模型載入時狀態如何，我們都把它打開
-            for param in self.backbone.parameters():
-                param.requires_grad = True
-            
-            # 2. 接著才凍結 Patch Embedding (這是為了穩定性，可選)
-            for name, param in self.backbone.named_parameters():
-                 if 'patch_embed' in name:
-                     param.requires_grad = False
-                     
-            print("✅ Backbone is UNFREZEN. (Except patch_embed)")
 
-    def forward(self, x):
-        # 1. 維度修正 (Input Shape Fix)
-        # 確保輸入是 (B, C, T, H, W)
+        hidden_dim = None
+        if hasattr(config, "model_config"):
+            mc = config.model_config
+            hidden_dim = mc.get("embed_dim", None)
+
+        hidden_dim = (
+            config.model_config["embed_dim"]
+            if isinstance(config.model_config, dict)
+            else config.model_config.embed_dim
+        )
+
+        self.classifier = nn.Linear(hidden_dim, num_classes)
+        mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1, 1)
+        std  = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1, 1)
+        self.register_buffer("img_mean", mean, persistent=False)
+        self.register_buffer("img_std", std, persistent=False)
+
+        if freeze_backbone:
+            print("❄️  Freezing backbone (only classifier trainable)")
+            for p in self.backbone.parameters():
+                p.requires_grad = False
+        else:
+            print("🔧 Full fine-tuning backbone (except patch_embed)")
+            for p in self.backbone.parameters():
+                p.requires_grad = True
+            # 可選：鎖 patch_embed 穩定一點
+            for name, p in self.backbone.named_parameters():
+                if "patch_embed" in name:
+                    p.requires_grad = False
+
+        # 6. loss
+        self.criterion = nn.BCEWithLogitsLoss()
+
+        self.train_acc = Accuracy(task="binary")
+        self.val_acc = Accuracy(task="binary")
+        self.val_auroc = AUROC(task="binary")
+
+    def ensure_train_mode(self):
+        """Make sure every layer in backbone enters train() mode."""
+        for m in self.backbone.modules():
+            m.train()
+    def _normalize(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.img_mean) / self.img_std
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dim() != 5:
+            raise ValueError(f"[VideoMAE] Expected 5D video tensor, got {x.shape}")
+
         if x.shape[1] != 3 and x.shape[2] == 3:
-             x = x.permute(0, 2, 1, 3, 4)
-        
-        # 2. 通過 Backbone
+
+            x = x.permute(0, 2, 1, 3, 4)
+
+
+        x = self._normalize(x)
+
         outputs = self.backbone(x)
-        
-        # 3. 輸出處理 (Output Handling)
-        if isinstance(outputs, torch.Tensor):
-            features = outputs
-        elif hasattr(outputs, 'last_hidden_state'):
-            features = outputs.last_hidden_state
-        else:
-            features = outputs[0]
-            
-        # === 4. 智慧池化 (Smart Pooling) [關鍵修正] ===
-        # 檢查維度：
-        # 如果是 (Batch, Seq, Hidden) -> 需要 Pooling
-        # 如果是 (Batch, Hidden)      -> 已經 Pool 過了，直接用
-        
-        if features.dim() == 3:
-            pooled_features = features.mean(dim=1)
-        elif features.dim() == 2:
-            pooled_features = features
-        else:
-            raise ValueError(f"Unexpected features shape: {features.shape}, expected 2D or 3D tensor.")
-        
-        # 5. 通過分類頭
-        logits = self.classifier(pooled_features)
-        
+
+        logits = self.classifier(outputs)            # (B, 1)
         return logits
 
+    # ---------- Lightning hooks ----------
     def training_step(self, batch, batch_idx):
-        x, y = batch[:2]
-        logits = self(x)
-        loss = nn.BCEWithLogitsLoss()(logits.squeeze(), y.float())
-        self.log('train_loss', loss, prog_bar=True)
+        self.ensure_train_mode()
+        if batch_idx == 0:
+            print("Backbone TRAIN modules:", sum(1 for m in self.backbone.modules() if m.training), "Backbone EVAL modules:", sum(1 for m in self.backbone.modules() if not m.training))
+        x, y = batch[:2]                # x: (B, 3, T, H, W), y: (B,)
+        logits = self(x).squeeze(-1)    # (B,)
+        y = y.float()
+        loss = self.criterion(logits, y.float())
+        probs = torch.sigmoid(logits)
+        self.train_acc.update(probs, y.int())
+        self.log("train_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
+        self.log("train_acc", self.train_acc, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch[:2]
-        logits = self(x)
-        loss = nn.BCEWithLogitsLoss()(logits.squeeze(), y.float())
-        preds = torch.sigmoid(logits.squeeze()) > 0.5
-        acc = (preds == y).float().mean()
-        self.log('val_loss', loss, prog_bar=True)
-        self.log('val_acc', acc, prog_bar=True)
-        return loss
+        logits = self(x).squeeze(-1)
+        loss = self.criterion(logits, y.float())
+        probs = torch.sigmoid(logits)
+        self.val_acc.update(probs, y.int())
+        self.val_auroc.update(probs, y.int())
 
+        self.log("val_loss", loss, prog_bar=True, on_epoch=True)
+        return loss
+    def on_validation_epoch_end(self):
+        self.log("val_acc", self.val_acc.compute(), prog_bar=True, sync_dist=True)
+        self.log("val_auroc", self.val_auroc.compute(), prog_bar=True, sync_dist=True)
+        self.val_acc.reset()
+        self.val_auroc.reset()
     def configure_optimizers(self):
-        return torch.optim.AdamW(
-            filter(lambda p: p.requires_grad, self.parameters()), 
-            lr=self.hparams.learning_rate, 
-            weight_decay=0.05
+        optimizer = torch.optim.AdamW(
+            filter(lambda p: p.requires_grad, self.parameters()),
+            lr=self.hparams.learning_rate,
+            weight_decay=0.05,
         )
+        return optimizer

@@ -1,0 +1,4 @@
+distributed: false
+freeze_backbone: false
+learning_rate: 0.0001
+num_classes: 1
