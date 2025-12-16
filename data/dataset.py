@@ -6,13 +6,10 @@ import numpy as np
 from torch.utils.data import IterableDataset, get_worker_info, Dataset
 from decord import VideoReader, cpu
 from dataclasses import dataclass
-from typing import List, Optional, Any
+from typing import List, Optional
 import random
 @dataclass
 class VideoMetadata:
-    """
-    整合後的 Metadata，強制讀取 video_frames 以計算總長度。
-    """
     file: str
     split: str
     fake_periods: List[List[float]]
@@ -29,7 +26,6 @@ class VideoMetadata:
             self.fake_periods = visual_fake_segments
         else:
             self.fake_periods = []
-        # 從 JSON 讀取這些欄位，如果沒有就用預設值
         self.video_frames = kwargs.get('video_frames', 0)
         self.duration = kwargs.get('duration', 0.0)
         
@@ -72,25 +68,19 @@ class DeepfakeDataset(IterableDataset):
         print(f"Loading metadata from: {json_file}")
         with open(json_file, 'r') as f:
             data = json.load(f)
-        
-        # 建立 Metadata
         self.metadata = [VideoMetadata(**item) for item in data]
 
         if take_num is not None:
             self.metadata = self.metadata[:take_num]
         
-        # === 關鍵修改：計算總幀數 ===
-        # 這樣你的 tqdm 進度條就會是準確的
         self.total_frames = sum([meta.video_frames for meta in self.metadata])
         
-        # 如果發現總幀數是 0，代表 JSON 裡可能沒有 video_frames 欄位，印個警告
         if self.total_frames == 0 and len(self.metadata) > 0:
             print("Warning: Total frames is 0. Check if 'video_frames' field exists in your JSON.")
 
         print(f"Loaded {len(self.metadata)} video entries with {self.total_frames} total frames.")
 
     def __iter__(self):
-        # 1. 多線程分工
         worker_info = get_worker_info()
         if worker_info is None:
             metadata_to_iter = self.metadata
@@ -103,7 +93,7 @@ class DeepfakeDataset(IterableDataset):
 
         target_shape = (self.image_size, self.image_size)
 
-        # 2. 讀取數據
+        
         for meta in metadata_to_iter:
             video_path = os.path.join(self.data_root, meta.split, meta.file)
             video = read_video_decord(video_path, resize_shape=target_shape)
@@ -111,16 +101,13 @@ class DeepfakeDataset(IterableDataset):
             if video.numel() == 0:
                 continue
 
-            # ---- FIX: uint8 -> float, normalize (match your xception inference) ----
             if video.dtype == torch.uint8:
                 video = video.float().div_(255.0)
             else:
                 video = video.float()
 
-            # If your Xception training/inference uses (-1, 1) normalization:
             video = (video - 0.5) / 0.5
 
-            # 3. 標籤邏輯
             if self.use_video_label:
                 label = float(len(meta.fake_periods) > 0)
                 for frame in video:
@@ -129,8 +116,8 @@ class DeepfakeDataset(IterableDataset):
             elif self.use_seg_label:
                 frame_label = torch.zeros(len(video))
                 for begin, end in meta.fake_periods:
-                    idx_begin = int(begin * meta.fps)   # 改這裡
-                    idx_end = int(end * meta.fps)       # 改這裡
+                    idx_begin = int(begin * meta.fps)   
+                    idx_end = int(end * meta.fps)     
                     frame_label[idx_begin: idx_end] = 1
                 
                 seg_chunks = torch.split(frame_label, self.use_seg_label)
@@ -146,8 +133,8 @@ class DeepfakeDataset(IterableDataset):
             else:
                 frame_label = torch.zeros(len(video))
                 for begin, end in meta.fake_periods:
-                    idx_begin = int(begin * meta.fps)   # 改
-                    idx_end = int(end * meta.fps)       # 改
+                    idx_begin = int(begin * meta.fps)   
+                    idx_end = int(end * meta.fps)      
                     idx_begin = max(0, idx_begin)
                     idx_end = min(len(video), idx_end)
                     frame_label[idx_begin: idx_end] = 1
@@ -156,18 +143,13 @@ class DeepfakeDataset(IterableDataset):
                     yield frame, frame_label[i]
 
     def __len__(self):
-        # === 關鍵修改：回傳精確的總幀數 ===
         return self.total_frames
 class DeepfakeVideoDataset(Dataset):
-    """
-    專為 Inference 設計的 Dataset。
-    一次回傳「整支影片」的所有 Frames，而不是打散的 Frame。
-    """
     def __init__(
         self, 
         data_root: str, 
         json_file: str = None, 
-        metadata: List[VideoMetadata] = None, # 支援直接傳入物件 (給 infer.py 用)
+        metadata: List[VideoMetadata] = None,
         image_size: int = 96,
         take_num: Optional[int] = None
     ):
@@ -195,21 +177,19 @@ class DeepfakeVideoDataset(Dataset):
 
     def __getitem__(self, index):
         meta = self.metadata[index]
-        # 拼湊路徑
         video_path = os.path.join(self.data_root, meta.split, meta.file)
         
-        # 使用你原本寫好的 Decord 讀取函式
-        # 注意：這裡回傳的是 (T, C, H, W) 的完整影片 Tensor
+        # (T, C, H, W)
         video = read_video_decord(video_path, resize_shape=(self.image_size, self.image_size))
         
         return video, meta.file
 class DeepfakeClipDataset(Dataset):
     def __init__(self, 
                  data_root: str, 
-                 metadata: list,  # 你的 VideoMetadata list
-                 clip_len: int = 16, # 3D CNN 通常用 8, 16, 32
-                 frame_interval: int = 1, # 跳幀採樣 (1=連續, 2=每隔1張採1張)
-                 image_size: int = 224, # VideoMAE/TimeSformer 通常要 224
+                 metadata: list,
+                 clip_len: int = 16, 
+                 frame_interval: int = 1, 
+                 image_size: int = 224, 
                  take_num: Optional[int] = None,
                  mode: str = 'train'):
         
@@ -290,5 +270,4 @@ class DeepfakeClipDataset(Dataset):
             
         except Exception as e:
             print(f"Error reading {path}: {e}")
-            # 回傳空值，DataLoader 的 collate_fn 需處理
             return torch.zeros(3, self.clip_len, self.image_size, self.image_size), 0.0, meta.file
