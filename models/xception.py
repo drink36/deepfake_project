@@ -1,5 +1,4 @@
 import timm
-
 from lightning.pytorch import LightningModule
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam

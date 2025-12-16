@@ -3,17 +3,17 @@ import torch
 import json
 import os
 import sys
-from tqdm.auto import tqdm
 from pathlib import Path
+from tqdm.auto import tqdm
+from datetime import datetime
 from torch.utils.data import DataLoader
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from data.dataset import DeepfakeVideoDataset, VideoMetadata 
 from xception import Xception
 from videomae_v2 import DeepfakeVideoMAEV2 
 from R2_1D import R2Plus1D
-from datetime import datetime
+
 parser = argparse.ArgumentParser(description="Deepfake inference")
 parser.add_argument("--data_root", type=str)
 parser.add_argument("--checkpoint", type=str)
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     device = "cuda" if args.gpus > 0 else "cpu"
 
-    # === 1. 模型初始化 ===
+    # === 1. load model ===
     if args.model == "xception":
         print("🚀 Loading Xception...")
         model = Xception.load_from_checkpoint(args.checkpoint, lr=None, distributed=False).eval()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         model.eval()
     else:
         model.train()
-    # === 2. 準備數據 ===
+    # === 2. prepare dataset & loader ===
     if args.metadata_file is not None:
         print(f"📄 Loading metadata from: {args.metadata_file}")
         with open(args.metadata_file, 'r') as f:
@@ -85,17 +85,15 @@ if __name__ == '__main__':
         image_size=image_size
     )
 
-    # Loader Batch Size: 一次讀 4 支影片進來 (CPU 平行處理)
     test_loader = DataLoader(
         test_dataset,
         batch_size=1,
         shuffle=False,
-        num_workers=8, # Linux 上開大一點，Windows 設 0
+        num_workers=8,
         pin_memory=True,
         persistent_workers=True,
         collate_fn=custom_collate
     )
-    # add take num
     date = datetime.now().strftime("%Y%m%d-%H%M%S")
     save_path = f"output/{args.model}_{args.subset}_{len(test_dataset)}_{date}.txt"
     save_path_soft = f"output/{args.model}_{args.subset}_{len(test_dataset)}_{date}_soft.txt"
@@ -116,7 +114,6 @@ if __name__ == '__main__':
         with torch.inference_mode():
             for batch_videos, batch_filenames in tqdm(test_loader):
                 
-                # 因為 loader batch_size=1，這裡其實只有一支影片
                 video = batch_videos[0] 
                 file_name = batch_filenames[0]
                 
@@ -127,7 +124,7 @@ if __name__ == '__main__':
                 pred_soft = 0.0
 
                 if is_3d_model:
-                    # === VideoMAE 優化邏輯 ===
+                    
                     video = video.float() / 255.0
                     video = video.to(device) # (T, C, H, W)
                     T = video.shape[0]
@@ -138,14 +135,14 @@ if __name__ == '__main__':
                         video = torch.cat([video, last_frame.repeat(padding, 1, 1, 1)], dim=0)
                         T = clip_len
 
-                    # 2) 先切「完整」的 clips（0,16,32,...）
+                    
                     n_full = T // clip_len
-                    full_part = video[:n_full * clip_len]  # (n_full*16, C, H, W)
+                    full_part = video[:n_full * clip_len]  
 
                     # (n_full, 16, C, H, W)
                     clips = full_part.reshape(n_full, clip_len, video.shape[1], video.shape[2], video.shape[3])
 
-                    # 3) 如果有尾巴，加一個「最後16幀」clip（可能跟前一段重疊）
+
                     if T % clip_len != 0:
                         tail = video[-clip_len:]  # (16, C, H, W)
                         clips = torch.cat([clips, tail.unsqueeze(0)], dim=0)
@@ -155,7 +152,7 @@ if __name__ == '__main__':
 
                     
                     n_clips = clips.shape[0]
-                    # 4. 批次推論
+                    
                     all_logits = []
                     for k in range(0, n_clips, inf_batch_size):
                         batch_clips = clips[k : k + inf_batch_size]
@@ -168,7 +165,7 @@ if __name__ == '__main__':
                         pred_soft= torch.logsumexp(all_logits,dim=0)
 
                 else:
-                    # === Xception 優化邏輯 ===
+                    
                     video = video.float()
 
                     
