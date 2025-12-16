@@ -131,4 +131,4 @@ For any questions or inquiries, please open an issue in this repository or conta
 
 ## 🙏 Acknowledgements
 
-We would like to thank [mention any individuals, institutions, or projects that provided significant help or resources].
+We would like to thank [VideoMAEv2](https://github.com/OpenGVLab/VideoMAEv2) and [AV-Deepfake1M](https://github.com/ControlNet/AV-Deepfake1M/tree/master).
