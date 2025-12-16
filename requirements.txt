@@ -1,0 +1,14 @@
+torch>=2.0.0
+torchvision>=0.15.0
+lightning>=2.0.0
+timm>=0.9.0
+transformers>=4.30.0
+decord>=0.6.0
+torchmetrics>=1.0.0
+numpy
+matplotlib
+scikit-learn
+tqdm
+pandas
+avdeepfake1m
+easydict
