@@ -56,7 +56,6 @@ python models/train.py \
     --num_train 50000 \
     --num_val 5000 \
     --max_epochs 10 \
-    --precision 16-mixed
 ```
 
 ### R(2+1)D
@@ -72,7 +71,6 @@ python models/train.py \
     --num_train 100000 \
     --num_val 5000 \
     --max_epochs 20 \
-    --precision 16-mixed
 ```
 
 ### VideoMAE V2
@@ -88,7 +86,6 @@ python models/train.py \
     --num_train 100000 \
     --num_val 5000 \
     --max_epochs 15 \
-    --precision 16-mixed
 ```
 
 ---
@@ -134,7 +131,7 @@ python models/infer.py \
     --checkpoint <weight path> \
     --model videomae_v2 \
     --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/test_metadata_filtered.json \
-    --subset test \
+    --subset val \
     --batch_size 32 \
     --gpus 1 \
     --take_num 1000
