@@ -13,4 +13,5 @@ __pycache__/
 /mini_dataset
 /test_dataset
 *.tar
+*.out
 lightning_logs/
