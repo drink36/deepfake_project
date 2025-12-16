@@ -1,6 +1,6 @@
 VideoMAE AUC: 0.9989
 R2Plus1D AUC: 0.9169
-Xception AUC: 0.9161
+Xception AUC: 0.8671
 VideoMAE + Audio5K AUC: 0.8377 
 R2Plus1D + Audio5K AUC: 0.8493
 Xception + Audio5K AUC: 0.7273

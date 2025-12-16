@@ -122,6 +122,23 @@ The project generates a comparison plot `grouped_model_auc.png` showing the AUC 
 
 ![Model Comparison](fig/grouped_model_auc.png)
 
+### Performance Table (AUC)
+
+| Test Set | VideoMAE | R2Plus1D | Xception |
+| :--- | :---: | :---: | :---: |
+| Standard | 0.9989 | 0.9169 | 0.8671 |
+| Audio5K | 0.8377 | 0.8493 | 0.7273 |
+| Audio2K | 0.9110 | 0.8802 | 0.8118 |
+| TestB | 0.8103 | 0.7261 | 0.5788 |
+
+## 💾 Model Checkpoints
+
+We provide pre-trained weights for our models.
+
+**[Download from Google Drive](https://drive.google.com/drive/folders/1Foz4sQVNeFc2IR_1m0zp_gZ2zBwdpvO5?usp=drive_link)**
+
+Please download the available pre-trained model weights. These checkpoints can be used for inference or fine-tuning.
+
 ---
 *Created for the Computer Vision Final Project.*
 

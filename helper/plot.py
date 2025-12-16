@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 models = ["VideoMAE", "R2Plus1D", "Xception"]
 
-visual = [0.9989, 0.9169, 0.9161]
+visual = [0.9989, 0.9169, 0.8671]
 audio_2k = [0.9110, 0.8802, 0.8118]
 audio_5k = [0.8377, 0.8493, 0.7273]
 testb = [0.8103, 0.7261, 0.5788]

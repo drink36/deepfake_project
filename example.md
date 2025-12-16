@@ -18,6 +18,27 @@ To replicate the environment used for this project, follow these steps:
     ```
 ---
 
+---
+
+## 0.5. Download Pre-trained Weights
+
+Pre-trained model weights for Xception, R(2+1)D, and VideoMAE V2 are available for download.
+
+1.  **Download from Google Drive**:
+    Please download the weights from the following [Google Drive link](https://drive.google.com/drive/folders/1Foz4sQVNeFc2IR_1m0zp_gZ2zBwdpvO5)
+
+2.  **Usage**:
+    The downloaded `.ckpt` files can be used with the `models/infer.py` script by specifying the `--checkpoint` argument. For example:
+    ```bash
+    python models/infer.py \
+        --checkpoint /path/to/your/downloaded_model.ckpt \
+        --model videomae_v2 \
+        # ... other arguments
+    ```
+    Ensure the `--model` argument matches the architecture of the downloaded checkpoint.
+
+---
+
 ## 1. Training
 
 Run the following commands to train each model. Paths refer to the standard dataset location on the cluster.
