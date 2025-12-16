@@ -6,7 +6,6 @@ __pycache__/
 .DS_Store
 .vscode/
 *.txt
-*.json
 *.ckpt
 *.pth
 *.gz
