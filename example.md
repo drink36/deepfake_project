@@ -125,5 +125,5 @@ python models/infer.py \
 Calculate metrics (AUC) using the output file from the inference step.
 
 ```bash
-python models/evaluate.py <path_to_inference_output_file> test_metadata_filtered_top1000.json
+python models/evaluate.py <path_to_inference_output_file> GT/test_metadata_filtered_top1000.json
 ```
