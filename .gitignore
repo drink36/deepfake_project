@@ -9,9 +9,9 @@ __pycache__/
 *.pth
 *.gz
 /mini_dataset
-/test_dataset
 *.tar
 *.out
 lightning_logs/
 /result_data
 output/
+*.zip

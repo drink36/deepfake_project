@@ -59,13 +59,13 @@ def copy_files(json_file, source_root, dest_root):
 
 if __name__ == "__main__":
     
-    MY_JSON_FILE = 'train_subset.json' 
+    # MY_JSON_FILE = 'train_subset.json' 
     MY_JSON_FILE2 = 'test_subset.json'
-    MY_JSON_FILE3 = 'val_subset.json'
+    # MY_JSON_FILE3 = 'val_subset.json'
     SOURCE_DATA_ROOT = '/fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus'
     
     DEST_DIR_NAME = 'test_dataset'
 
-    copy_files(MY_JSON_FILE, SOURCE_DATA_ROOT, DEST_DIR_NAME)
+    # copy_files(MY_JSON_FILE, SOURCE_DATA_ROOT, DEST_DIR_NAME)
     copy_files(MY_JSON_FILE2, SOURCE_DATA_ROOT, DEST_DIR_NAME)
-    copy_files(MY_JSON_FILE3, SOURCE_DATA_ROOT, DEST_DIR_NAME)
+    # copy_files(MY_JSON_FILE3, SOURCE_DATA_ROOT, DEST_DIR_NAME)

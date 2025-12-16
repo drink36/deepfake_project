@@ -120,28 +120,28 @@ if __name__ == "__main__":
     processor = DataPreprocessor(root_dir=MY_ROOT_DIR)
 
     
-    processor.load_and_process_splits(valid_modify_types=['audio_modified'])
+    processor.load_and_process_splits()
     
     
-    processor.save_main_splits(sname='audio_mod')
-    processor.generate_eval_set(
-        source_split='train',         
-        filter_origin_split='train',
-        take_num=5000,
-        output_json_name='train_subset.json',
-        output_txt_name='train_subset.txt'
-    )
-    processor.generate_eval_set(
-        source_split='val',         
-        filter_origin_split='train',
-        take_num=1000,
-        output_json_name='val_subset.json',
-        output_txt_name='val_subset.txt'
-    )
+    processor.save_main_splits()
+    # processor.generate_eval_set(
+    #     source_split='train',         
+    #     filter_origin_split='train',
+    #     take_num=5000,
+    #     output_json_name='train_subset.json',
+    #     output_txt_name='train_subset.txt'
+    # )
+    # processor.generate_eval_set(
+    #     source_split='val',         
+    #     filter_origin_split='train',
+    #     take_num=1000,
+    #     output_json_name='val_subset.json',
+    #     output_txt_name='val_subset.txt'
+    # )
     processor.generate_eval_set(
         source_split='test',         
         filter_origin_split='train',
-        take_num=1000,
+        take_num=100,
         output_json_name='test_subset.json',
         output_txt_name='test_subset.txt'
     )
