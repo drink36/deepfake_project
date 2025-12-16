@@ -18,8 +18,6 @@ To replicate the environment used for this project, follow these steps:
     ```
 ---
 
----
-
 ## 0.5. Download Pre-trained Weights
 
 Pre-trained model weights for Xception, R(2+1)D, and VideoMAE V2 are available for download.
@@ -39,102 +37,28 @@ Pre-trained model weights for Xception, R(2+1)D, and VideoMAE V2 are available f
 
 ---
 
-## 1. Training
+## 1. Inference
 
-Run the following commands to train each model. Paths refer to the standard dataset location on the cluster.
+Run inference to generate prediction scores. Test dataset include 100 videos insides.
 
-### Xception
-*   **Estimated Time:** ~12 hours
-```bash
-python models/train.py \
-    --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus \
-    --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json \
-    --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json \
-    --model xception \
-    --batch_size 1024 \
-    --gpus 1 \
-    --num_train 50000 \
-    --num_val 5000 \
-    --max_epochs 10 \
-```
-
-### R(2+1)D
-*   **Estimated Time:** ~10 hours
-```bash
-python models/train.py \
-    --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus \
-    --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json \
-    --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json \
-    --model r2plus1d \
-    --batch_size 64 \
-    --gpus 1 \
-    --num_train 100000 \
-    --num_val 5000 \
-    --max_epochs 20 \
-```
-
-### VideoMAE V2
-*   **Estimated Time:** ~15 hours
-```bash
-python models/train.py \
-    --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus \
-    --train_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/train_metadata_filtered.json \
-    --val_metadata /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/validation_metadata_filtered.json \
-    --model videomae_v2 \
-    --batch_size 8 \
-    --gpus 1 \
-    --num_train 100000 \
-    --num_val 5000 \
-    --max_epochs 15 \
-```
-
----
-
-## 2. Inference
-
-Run inference to generate prediction scores.
 **Note:** Replace `<weight path>` with the actual path to your trained model checkpoint (e.g., `ckpt/xception_.../best_model.ckpt`).
 
 ### Xception
-*   **Estimated Time:** ~1 minute
+*   **Estimated Time:** ~10 sec
 ```bash
-python models/infer.py \
-    --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus \
-    --checkpoint <weight path> \
-    --model xception \
-    --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/test_metadata_filtered.json \
-    --subset val \
-    --batch_size 1024 \
-    --gpus 1 \
-    --take_num 1000
+python models/infer.py --data_root test_dataset --checkpoint <weight path> --model xception --metadata_file test_dataset/test_subset.json --subset test --batch_size 1024 --gpus 1
 ```
 
 ### R(2+1)D
-*   **Estimated Time:** ~1 minute
+*   **Estimated Time:** ~10 sec
 ```bash
-python models/infer.py \
-    --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus \
-    --checkpoint <weight path> \
-    --model r2plus1d \
-    --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/test_metadata_filtered.json \
-    --subset val \
-    --batch_size 32 \
-    --gpus 1 \
-    --take_num 1000
+python models/infer.py --data_root test_dataset --checkpoint <weight path> --model r2plus1d --metadata_file test_dataset/test_subset.json --subset test --batch_size 32 --gpus 1
 ```
 
 ### VideoMAE V2
-*   **Estimated Time:** ~10 minutes
+*   **Estimated Time:** ~1 min
 ```bash
-python models/infer.py \
-    --data_root /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus \
-    --checkpoint <weight path> \
-    --model videomae_v2 \
-    --metadata_file /fs/scratch/PAS3162/drink36/AV-Deepfake1M-PlusPlus/test_metadata_filtered.json \
-    --subset val \
-    --batch_size 32 \
-    --gpus 1 \
-    --take_num 1000
+python models/infer.py --data_root test_dataset --checkpoint <weight path> --model videomae_v2 --metadata_file test_dataset/test_subset.json --subset test --batch_size 32 --gpus 1
 ```
 
 *Results will be saved in the `output/` directory.*
@@ -145,6 +69,7 @@ python models/infer.py \
 
 Calculate metrics (AUC) using the output file from the inference step.
 
+**Please use the txt file without soft in the end.**
 ```bash
-python models/evaluate.py <path_to_inference_output_file> GT/test_metadata_filtered_top1000.json
+python models/evaluate.py <path_to_inference_output_file> GT/test_subset.json
 ```
